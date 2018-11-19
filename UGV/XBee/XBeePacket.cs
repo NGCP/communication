@@ -1,5 +1,7 @@
 ﻿namespace UGV.XBee
 {
+    // feel free to modify this as we set up the structure of the packets we
+    // are sending as JSON through the xbee
     public struct XBeePacket
     {
         public int latitude, longitude;
@@ -30,6 +32,11 @@
         public static bool operator !=(XBeePacket left, XBeePacket right)
         {
             return !(left == right);
+        }
+
+        public override string ToString()
+        {
+            return "latitude: " + latitude + "\nlongitude: " + longitude;
         }
     }
 }
