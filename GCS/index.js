@@ -1,11 +1,11 @@
 const SerialPort = require('serialport');
 const { constants: C, XBeeAPI } = require('xbee-api');
 
-const SELF_XBEE_PORT = '/dev/tty.usbserial-DA01R7GR';
-const DESTINATION_XBEE_PORT = '0013A2004067E4AE';
+const SELF_XBEE_PORT = 'COM5';
+const DESTINATION_XBEE_PORT = '0013A20040917A31';
 
 const port = new SerialPort(SELF_XBEE_PORT, { baudRate: 57600 });
-const xbeeAPI = new XBeeAPI({ api_mode: 1 });
+const xbeeAPI = new XBeeAPI();
 
 const data = {
   latitude: 69,
