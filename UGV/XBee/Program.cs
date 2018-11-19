@@ -4,7 +4,7 @@ namespace UGV.XBee
 {
     public struct Config
     {
-        public const string Port = "COM5";
+        public const string Port = "/dev/tty.usbserial-DA01R7GR";
         public const int BaudRate = 57600;
         public const string DestinationMAC = "0013A20040917A31";
     }
@@ -14,19 +14,17 @@ namespace UGV.XBee
         public static void Main(string[] args)
         {
             XBeeDevice xbee = new XBeeDevice(Config.Port, Config.BaudRate, Config.DestinationMAC);
-            XBeeDevice xbee_r = new XBeeDevice("COM6", 57600);
 
             bool success1 = xbee.Start();
-            bool success2 = xbee_r.Start();
-            if (!success1 || !success2)
+            if (!success1)
             {
-                Console.WriteLine("Failed to initialize XBees");
+                Console.WriteLine("Failed to initialize XBee");
                 Console.ReadLine();
                 return;
             }
 
             string input;
-            XBeePacket packet;
+            // XBeePacket packet;
             Random rnd = new Random();
             while (true)
             {
@@ -42,7 +40,6 @@ namespace UGV.XBee
             }
 
             xbee.Stop();
-            xbee_r.Start();
         }
     }
 }
