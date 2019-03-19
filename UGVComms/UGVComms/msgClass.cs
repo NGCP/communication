@@ -35,4 +35,29 @@ namespace UGVComms
     {
         public new const string type = "complete";
     }
+    
+    //////////////messages to be received/////////////
+    public class connAckMsg : msgClass
+ 	{
+ 		public new const string type = "connectionAck";
+ 		public int time { get; set; }
+ 	}
+ 	
+ 	public class recAckMsg : msgClass 
+ 	{
+ 		public new const string type = "ack";
+ 	}
+ 	
+ 	public class startMsg : msgClass 
+ 	{
+ 		public new const string type = "start";
+ 		public new const string jobType = "SearchAndRescue";
+ 	}
+ 	
+ 	public class addMissionMsg : msg class 
+ 	{
+ 		public new const string type = "addMission";
+ 		public int lat { get; set; }
+ 		public int lon { get; set; }
+ 	}
 }
