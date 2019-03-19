@@ -6,29 +6,33 @@ using System.Threading.Tasks;
 
 namespace UGVComms
 {
-    public class connectMsg
+    public class msgClass
     {
-        public const string type = "connect";
+        public string type;
+    }
+    public class connectMsg : msgClass
+    {
+        public new const string type = "connect";
         public int time { get; set; }
         public string jobsAvailable { get; set; }
     }
 
-    public class updateMsg
+    public class updateMsg : msgClass
     {
-        public const string type = "update";
+        public new const string type = "update";
         public float lat { get; set; }
         public float lon { get; set; }
         public float heading { get; set; }
         public string status { get; set; }
     }
 
-    public class ackMsg
+    public class ackMsg : msgClass
     {
-        public const string type = "ack";
+        public new const string type = "ack";
     }
 
-    public class completeMsg
+    public class completeMsg : msgClass
     {
-        public const string type = "complete";
+        public new const string type = "complete";
     }
 }

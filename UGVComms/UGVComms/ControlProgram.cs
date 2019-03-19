@@ -23,7 +23,7 @@ namespace UGVComms
 
         static async void initializeConnection(string PortName, int BaudRate, string DestinationMAC)
         {
-            Object message;
+            msgClass message;
             //sending (xbee) and receiving (toXbee) xbees
             XBeeController xbee = new XBeeController();
             XBeeNode toXbee;
@@ -39,7 +39,8 @@ namespace UGVComms
                 //received data is stored in a json in this class for further use
                 try
                 {
-                    message = JsonConvert.DeserializeObject(jsonString);
+                    //converts the received data into usable message json
+                    message = JsonConvert.DeserializeObject<msgClass>(jsonString);
                     checkType(message);
                 }
                 catch(Exception e)
@@ -52,9 +53,26 @@ namespace UGVComms
 
 
         //data processing
-        static void checkType(Object msg)
+
+        //checks "type" field of received data to determine what to do next
+        static void checkType(msgClass msg)
         {
             string type = msg.type;
+            switch(type)
+            {
+                case "connectionAck":
+                    Console.WriteLine("Connecting");
+                    break;
+                case "start":
+                    Console.WriteLine("Starting job");
+                    break;
+                case "addMission":
+                    Console.WriteLine("Adding Mission");
+                    break;
+                case "ack":
+                    Console.WriteLine("Acknowledgement Received");
+                    break;
+            }
         }
     }
 }
