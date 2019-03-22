@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace UGVComms
 {
-    public class msgClass
+    public class MsgClass
     {
         public string type;
     }
-    public class connectMsg : msgClass
+    public class ConnectMsg : MsgClass
     {
         public new const string type = "connect";
         public int time { get; set; }
         public string jobsAvailable { get; set; }
     }
 
-    public class updateMsg : msgClass
+    public class UpdateMsg : MsgClass
     {
         public new const string type = "update";
         public float lat { get; set; }
@@ -26,35 +26,35 @@ namespace UGVComms
         public string status { get; set; }
     }
 
-    public class ackMsg : msgClass
+    public class AckMsg : MsgClass
     {
         public new const string type = "ack";
     }
 
-    public class completeMsg : msgClass
+    public class CompleteMsg : MsgClass
     {
         public new const string type = "complete";
     }
     
     //////////////messages to be received/////////////
-    public class connAckMsg : msgClass
+    public class ConnAckMsg : MsgClass
  	{
  		public new const string type = "connectionAck";
  		public int time { get; set; }
  	}
  	
- 	public class recAckMsg : msgClass 
+ 	public class RecAckMsg : MsgClass 
  	{
  		public new const string type = "ack";
  	}
  	
- 	public class startMsg : msgClass 
+ 	public class StartMsg : MsgClass 
  	{
  		public new const string type = "start";
  		public const string jobType = "SearchAndRescue";
  	}
  	
- 	public class addMissionMsg : msgClass 
+ 	public class AddMissionMsg : MsgClass 
  	{
  		public new const string type = "addMission";
  		public int lat { get; set; }
