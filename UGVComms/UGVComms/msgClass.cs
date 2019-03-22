@@ -54,7 +54,7 @@ namespace UGVComms
  		public new const string jobType = "SearchAndRescue";
  	}
  	
- 	public class addMissionMsg : msg class 
+ 	public class addMissionMsg : msgClass 
  	{
  		public new const string type = "addMission";
  		public int lat { get; set; }
