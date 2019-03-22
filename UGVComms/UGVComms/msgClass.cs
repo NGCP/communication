@@ -51,7 +51,7 @@ namespace UGVComms
  	public class startMsg : msgClass 
  	{
  		public new const string type = "start";
- 		public new const string jobType = "SearchAndRescue";
+ 		public const string jobType = "SearchAndRescue";
  	}
  	
  	public class addMissionMsg : msgClass 

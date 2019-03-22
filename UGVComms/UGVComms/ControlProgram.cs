@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XBee;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace UGVComms
 {
@@ -13,12 +14,22 @@ namespace UGVComms
         private const string PortName = "COM3";
         private const int BaudRate = 57600;
         public const string DestinationMAC = "0013A20040A5430F";
-
+        static ManualResetEvent _quitEvent = new ManualResetEvent(false);
 
 
         static void Main(string[] args)
         {
+            
+            //Important: Ctrl+C to exit program
+            //Allows the program to continue to run until it is exited
+            Console.CancelKeyPress += (sender, eArgs) => {
+                _quitEvent.Set();
+                eArgs.Cancel = true;
+            };
+
             initializeConnection(PortName, BaudRate, DestinationMAC);
+
+            _quitEvent.WaitOne();
         }
 
         static async void initializeConnection(string PortName, int BaudRate, string DestinationMAC)
@@ -31,7 +42,8 @@ namespace UGVComms
             //opens this xbee to connection
             await xbee.OpenAsync(PortName, BaudRate);
             //find the destination xbee and assign it to toXBee;
-            toXbee = await xbee.GetNodeAsync(new NodeAddress(new LongAddress(UInt64.Parse(DestinationMAC))));
+            //"AllowHexSpecifer" is needed to accept hex values A-F
+            toXbee = await xbee.GetNodeAsync(new NodeAddress(new LongAddress(UInt64.Parse(DestinationMAC, System.Globalization.NumberStyles.AllowHexSpecifier))));
 
             xbee.DataReceived += (sender, eventArgs) =>
             {
@@ -50,7 +62,6 @@ namespace UGVComms
 
             };
         }
-
 
         //data processing
 
