@@ -10,11 +10,13 @@ namespace UGVComms
     {
         public string type;
     }
+
+    //////////////messages to be sent/////////////
     public class ConnectMsg : MsgClass
     {
         public new const string type = "connect";
-        public int time { get; set; }
-        public string jobsAvailable { get; set; }
+        public int Time { get; set; }
+        public string jobsAvailable = "searchAndRescue";
     }
 
     public class UpdateMsg : MsgClass
@@ -39,25 +41,25 @@ namespace UGVComms
     //////////////messages to be received/////////////
     public class ConnAckMsg : MsgClass
  	{
- 		public new const string type = "connectionAck";
- 		public int time { get; set; }
+        public new string type;
+        public int Time;
  	}
  	
  	public class RecAckMsg : MsgClass 
  	{
- 		public new const string type = "ack";
+        public new string type;
  	}
  	
  	public class StartMsg : MsgClass 
  	{
- 		public new const string type = "start";
- 		public const string jobType = "SearchAndRescue";
+        public new string type;
+        public string jobType;
  	}
  	
  	public class AddMissionMsg : MsgClass 
  	{
- 		public new const string type = "addMission";
- 		public int lat { get; set; }
- 		public int lon { get; set; }
+        public new string type;
+        public int lat;
+        public int lon;
  	}
 }
