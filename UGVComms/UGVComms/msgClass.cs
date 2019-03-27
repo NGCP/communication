@@ -37,7 +37,7 @@ namespace UGVComms
     {
         public new const string type = "update";
         public float lat { get; set; }
-        public float lon { get; set; }
+        public float lng { get; set; }
         public float heading { get; set; }
         public string status { get; set; }
     }
@@ -74,6 +74,6 @@ namespace UGVComms
  	{
         public new string type;
         public int lat;
-        public int lon;
+        public int lng;
  	}
 }
