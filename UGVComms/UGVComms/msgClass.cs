@@ -29,7 +29,7 @@ namespace UGVComms
     public class ConnectMsg : MsgClass
     {
         public new const string type = "connect";
-        public int Time = (int)DateTimeOffset.Now.ToUnixTimeSeconds();   // method for getting Epoch time, og type is long, casted to int
+        public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();   
         public string jobsAvailable = "searchAndRescue";
     }
 
