@@ -85,7 +85,7 @@ namespace UGVComms
                     AddMissionMsg addMsg = JsonConvert.DeserializeObject<AddMissionMsg>(json);
                     Console.WriteLine("Adding Mission");
                     Console.WriteLine("Latitude: " + addMsg.lat);
-                    Console.WriteLine("Longitude: " + addMsg.lon);
+                    Console.WriteLine("Longitude: " + addMsg.lng);
                     break;
                 case "ack":
                     RecAckMsg recAck = JsonConvert.DeserializeObject<RecAckMsg>(json);
