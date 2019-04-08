@@ -1,8 +1,8 @@
 const SerialPort = require('serialport');
 const { constants: C, XBeeAPI } = require('xbee-api');
 
-const PORT = 'COM6';
-const DESTINATION_MAC = '0013A2004067E4AE';
+const PORT = 'COM5';
+const DESTINATION_MAC = '0013A20040917A31';
 
 const port = new SerialPort(PORT, { baudRate: 57600 }, err => {
 	if (err) {

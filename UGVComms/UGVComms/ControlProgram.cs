@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XBee;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace UGVComms
 {
@@ -13,48 +14,84 @@ namespace UGVComms
         private const string PortName = "COM3";
         private const int BaudRate = 57600;
         public const string DestinationMAC = "0013A20040A5430F";
-
+        static ManualResetEvent _quitEvent = new ManualResetEvent(false);
 
 
         static void Main(string[] args)
         {
+            
+            // Important: Ctrl+C to exit program
+            // Allows the program to continue to run until it is exited
+            Console.CancelKeyPress += (sender, eArgs) => {
+                _quitEvent.Set();
+                eArgs.Cancel = true;
+            };
+
             initializeConnection(PortName, BaudRate, DestinationMAC);
+
+            _quitEvent.WaitOne();
         }
 
         static async void initializeConnection(string PortName, int BaudRate, string DestinationMAC)
         {
-            Object message;
-            //sending (xbee) and receiving (toXbee) xbees
+            MsgClass message;
+            // Sending (xbee) and receiving (toXbee) xbees
             XBeeController xbee = new XBeeController();
             XBeeNode toXbee;
 
-            //opens this xbee to connection
+            // Opens this xbee to connection
             await xbee.OpenAsync(PortName, BaudRate);
-            //find the destination xbee and assign it to toXBee;
-            toXbee = await xbee.GetNodeAsync(new NodeAddress(new LongAddress(UInt64.Parse(DestinationMAC))));
+            // Find the destination xbee and assign it to toXBee;
+            // "AllowHexSpecifer" is needed to accept hex values A-F
+            toXbee = await xbee.GetNodeAsync(new NodeAddress(new LongAddress(UInt64.Parse(DestinationMAC, System.Globalization.NumberStyles.AllowHexSpecifier))));
 
             xbee.DataReceived += (sender, eventArgs) =>
             {
+                // Received data is stored in a string in this class for further use
                 string jsonString = Encoding.UTF8.GetString(eventArgs.Data);
-                //received data is stored in a json in this class for further use
+                
                 try
                 {
-                    message = JsonConvert.DeserializeObject(jsonString);
-                    checkType(message);
+                    // Converts the received data into usable json
+                    message = JsonConvert.DeserializeObject<MsgClass>(jsonString);
+                    checkType(message, jsonString);
                 }
                 catch(Exception e)
                 {
                     Console.WriteLine("Data received was not a json!");
                 }
-
             };
         }
 
+        // Data processing
 
-        //data processing
-        static void checkType(Object msg)
+        // Checks "type" field of received data to determine what to do next
+        static void checkType(MsgClass msg, string json)
         {
             string type = msg.type;
+            switch(type)
+            {
+                case "connectionAck":
+                    ConnAckMsg connAck = JsonConvert.DeserializeObject<ConnAckMsg>(json);
+                    Console.WriteLine("Connecting");
+                    Console.WriteLine("Time: " + connAck.Time);
+                    break;
+                case "start":
+                    StartMsg start = JsonConvert.DeserializeObject<StartMsg>(json);
+                    Console.WriteLine("Starting Mission");
+                    Console.WriteLine(start.jobType);
+                    break;
+                case "addMission":
+                    AddMissionMsg addMsg = JsonConvert.DeserializeObject<AddMissionMsg>(json);
+                    Console.WriteLine("Adding Mission");
+                    Console.WriteLine("Latitude: " + addMsg.lat);
+                    Console.WriteLine("Longitude: " + addMsg.lon);
+                    break;
+                case "ack":
+                    RecAckMsg recAck = JsonConvert.DeserializeObject<RecAckMsg>(json);
+                    Console.WriteLine("Acknowledgement Received");
+                    break;
+            }
         }
     }
 }
