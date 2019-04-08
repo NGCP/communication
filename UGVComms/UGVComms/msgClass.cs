@@ -56,7 +56,7 @@ namespace UGVComms
     public class ConnAckMsg : MsgClass      
  	{
         public new string type;
-        public int Time = (int)DateTimeOffset.Now.ToUnixTimeSeconds();
+        public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();
  	}
  	
  	public class RecAckMsg : MsgClass       
