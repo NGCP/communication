@@ -28,14 +28,14 @@ namespace UGVComms
     //////////////messages to be sent/////////////
     public class ConnectMsg : MsgClass
     {
-        public new const string type = "connect";
+        public new string type = "connect";
         public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();   
         public string jobsAvailable = "searchAndRescue";
     }
 
     public class UpdateMsg : MsgClass
     {
-        public new const string type = "update";
+        public new string type = "update";
         public float lat { get; set; }
         public float lng { get; set; }
         public float heading { get; set; }
@@ -44,12 +44,12 @@ namespace UGVComms
 
     public class AckMsg : MsgClass
     {
-        public new const string type = "ack";
+        public new string type = "ack";
     }
 
     public class CompleteMsg : MsgClass
     {
-        public new const string type = "complete";
+        public new string type = "complete";
     }
     
     //////////////messages to be received/////////////

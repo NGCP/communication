@@ -15,7 +15,9 @@ namespace UGVComms
         private const int BaudRate = 57600;
         public const string DestinationMAC = "0013A20040A5430F";
         static ManualResetEvent _quitEvent = new ManualResetEvent(false);
-
+        // Sending (xbee) and receiving (toXbee) xbees
+        static XBeeController xbee = new XBeeController();
+        static XBeeNode toXbee;
 
         static void Main(string[] args)
         {
@@ -28,6 +30,9 @@ namespace UGVComms
             };
 
             initializeConnection(PortName, BaudRate, DestinationMAC);
+            Console.WriteLine("Press enter to send connection request");
+            Console.ReadLine();
+            sendConnect();
 
             _quitEvent.WaitOne();
         }
@@ -35,9 +40,7 @@ namespace UGVComms
         static async void initializeConnection(string PortName, int BaudRate, string DestinationMAC)
         {
             MsgClass message;
-            // Sending (xbee) and receiving (toXbee) xbees
-            XBeeController xbee = new XBeeController();
-            XBeeNode toXbee;
+            
 
             // Opens this xbee to connection
             await xbee.OpenAsync(PortName, BaudRate);
@@ -63,6 +66,13 @@ namespace UGVComms
             };
         }
 
+        static async void sendConnect()
+        {
+            ConnectMsg conn = new ConnectMsg();
+            conn.Time = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
+            await toXbee.TransmitDataAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(conn)));
+        }
+
         // Data processing
 
         // Checks "type" field of received data to determine what to do next
@@ -75,6 +85,9 @@ namespace UGVComms
                     ConnAckMsg connAck = JsonConvert.DeserializeObject<ConnAckMsg>(json);
                     Console.WriteLine("Connecting");
                     Console.WriteLine("Time: " + connAck.Time);
+                    Console.WriteLine("");
+                    Console.WriteLine("Awaiting command...");
+                    Console.WriteLine("");
                     break;
                 case "start":
                     StartMsg start = JsonConvert.DeserializeObject<StartMsg>(json);
