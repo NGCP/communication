@@ -35,6 +35,9 @@ namespace UGVComms
             Console.WriteLine("Press enter to send connection request");
             Console.ReadLine();
             //sendConnect();
+            ConnectMsg conn = new ConnectMsg();
+            conn.Time = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
+            createAndSendMessage(JsonConvert.SerializeObject(conn));
 
             _quitEvent.WaitOne();
         }
