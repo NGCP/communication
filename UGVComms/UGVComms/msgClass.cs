@@ -86,10 +86,5 @@ namespace UGVComms
        
  	}
 
-    public class StopMsg : MsgClass
-    {
-
-    }
-
     
 }
