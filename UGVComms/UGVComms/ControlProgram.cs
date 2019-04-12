@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using XBee;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Timers;
 
 namespace UGVComms
 {
@@ -14,6 +15,7 @@ namespace UGVComms
         private const string PortName = "COM3";
         private const int BaudRate = 57600;
         public const string DestinationMAC = "0013A20040A5430F";
+        private int messageID = 0;
         static ManualResetEvent _quitEvent = new ManualResetEvent(false);
         // Sending (xbee) and receiving (toXbee) xbees
         static XBeeController xbee = new XBeeController();
@@ -32,7 +34,7 @@ namespace UGVComms
             initializeConnection(PortName, BaudRate, DestinationMAC);
             Console.WriteLine("Press enter to send connection request");
             Console.ReadLine();
-            sendConnect();
+            //sendConnect();
 
             _quitEvent.WaitOne();
         }
@@ -66,11 +68,30 @@ namespace UGVComms
             };
         }
 
+        /*
         static async void sendConnect()
         {
             ConnectMsg conn = new ConnectMsg();
             conn.Time = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
             await toXbee.TransmitDataAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(conn)));
+        }
+        */
+
+        static async void sendMessage(object source, ElapsedEventArgs e, string json)
+        {
+            await toXbee.TransmitDataAsync(Encoding.UTF8.GetBytes(json));
+        }
+
+
+        static async void createAndSendMessage(string json)
+        {
+            System.Timers.Timer timer = new System.Timers.Timer();
+            timer.Interval = 500;
+            timer.Elapsed += new ElapsedEventHandler((sender, e) => sendMessage(sender, e, json));
+            timer.AutoReset = true;
+            timer.Enabled = true;
+
+
         }
 
         // Data processing

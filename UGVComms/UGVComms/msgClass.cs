@@ -81,15 +81,14 @@ namespace UGVComms
 
 
     }
+    public class MissionInfo
+    {
+        public string taskType;
+        public float lat;
+        public float lng;
+    }
+}
 
-    
-}
-public class MissionInfo
-{
-    public string taskType;
-    public float lat;
-    public float lng;
-}
 
 
 
