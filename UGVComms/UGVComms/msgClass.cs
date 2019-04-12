@@ -23,6 +23,10 @@ namespace UGVComms
     public class MsgClass
     {
         public string type;
+        public int id;
+        public int sid;
+        public int tid;
+        //public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();
     }
 
     //////////////messages to be sent/////////////
@@ -72,8 +76,20 @@ namespace UGVComms
  	
  	public class AddMissionMsg : MsgClass   
  	{
-        public new string type;
-        public int lat;
-        public int lng;
+        public new string type;     // either retrieveTarget or deliverTarget; same values required
+        public class missionInfo
+        {
+            public string taskType;
+            public float lat;
+            public float lng;
+        }
+       
  	}
+
+    public class StopMsg : MsgClass
+    {
+
+    }
+
+    
 }
