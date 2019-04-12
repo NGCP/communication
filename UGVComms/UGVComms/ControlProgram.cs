@@ -20,6 +20,7 @@ namespace UGVComms
         // Sending (xbee) and receiving (toXbee) xbees
         static XBeeController xbee = new XBeeController();
         static XBeeNode toXbee;
+        public static System.Timers.Timer timer = new System.Timers.Timer();
 
         static void Main(string[] args)
         {
@@ -88,7 +89,7 @@ namespace UGVComms
 
         static async void createAndSendMessage(string json)
         {
-            System.Timers.Timer timer = new System.Timers.Timer();
+            
             timer.Interval = 500;
             timer.Elapsed += new ElapsedEventHandler((sender, e) => sendMessage(sender, e, json));
             timer.AutoReset = true;
@@ -125,6 +126,7 @@ namespace UGVComms
                     Console.WriteLine("Longitude: " + addMsg.missionInfo.lng);
                     break;
                 case "ack":
+                    timer.Stop();
                     RecAckMsg recAck = JsonConvert.DeserializeObject<RecAckMsg>(json);
                     Console.WriteLine("Acknowledgement Received");
                     break;
