@@ -74,17 +74,22 @@ namespace UGVComms
         public string jobType;
  	}
  	
- 	public class AddMissionMsg : MsgClass   
+ 	public class AddMissionMsg : MsgClass  
  	{
-        public new string type;     // either retrieveTarget or deliverTarget; same values required
-        public class missionInfo
-        {
-            public string taskType;
-            public float lat;
-            public float lng;
-        }
-       
- 	}
+        public string type { get; set; }    // either retrieveTarget or deliverTarget; same values required
+        public MissionInfo missionInfo { get; set; }
+
+
+    }
 
     
 }
+public class MissionInfo
+{
+    public string taskType;
+    public float lat;
+    public float lng;
+}
+
+
+
