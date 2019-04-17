@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using MessagePack;
+
 namespace UGVComms
 {
     /* Classes are being used instead of structs because structs are considered value types
@@ -20,74 +22,125 @@ namespace UGVComms
      * the effort as performance increases are negligible when comparing classes and structs.
      */
 
+    [MessagePackObject]
     public class MsgClass
     {
-        public string type;
-        public int id;
-        public int sid;
-        public int tid;
-        //public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        [Key("type")]
+        public string Type;
+        [Key("id")]
+        public int Id;
+        [Key("sid")]
+        public int Sid;
+        [Key("tid")]
+        public int Tid;
+        [Key("time")]
+        public long Time = (long) DateTimeOffset.Now.ToUnixTimeMilliseconds();
     }
 
     //////////////messages to be sent/////////////
     public class ConnectMsg : MsgClass
     {
-        public new string type = "connect";
-        public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();   
-        public string jobsAvailable = "searchAndRescue";
+        [Key("jobsAvailable")]
+        public string[] JobsAvailable = { "ugvRescue" };
+
+        public ConnectMsg()
+        {
+            Type = "connect";
+        }
     }
 
     public class UpdateMsg : MsgClass
     {
-        public new string type = "update";
-        public float lat { get; set; }
-        public float lng { get; set; }
-        public float heading { get; set; }
-        public string status { get; set; }
-    }
+        [Key("lat")]
+        public float Lat;
+        [Key("lng")]
+        public float Lng;
+        [Key("status")]
+        public string Status;
+        [Key("heading")]
+        public float Heading;
+        [Key("battery")]
+        public float Battery;
 
-    public class AckMsg : MsgClass
-    {
-        public new string type = "ack";
+        public UpdateMsg()
+        {
+            Type = "connect";
+        }
     }
 
     public class CompleteMsg : MsgClass
     {
-        public new string type = "complete";
+        public CompleteMsg()
+        {
+            Type = "complete";
+        }
     }
     
     //////////////messages to be received/////////////
     public class ConnAckMsg : MsgClass      
  	{
-        public new string type;
-        public long Time = (long)DateTimeOffset.Now.ToUnixTimeMilliseconds();
- 	}
- 	
- 	public class RecAckMsg : MsgClass       
- 	{
-        public new string type;
+        public ConnAckMsg()
+        {
+            Type = "connectionAck";
+        }
  	}
  	
  	public class StartMsg : MsgClass        
  	{
-        public new string type;
+        [Key("jobType")]
         public string jobType;
+
+        public StartMsg()
+        {
+            Type = "start";
+        }
  	}
  	
  	public class AddMissionMsg : MsgClass  
  	{
-        public string type { get; set; }    // either retrieveTarget or deliverTarget; same values required
-        public MissionInfo missionInfo { get; set; }
+        [Key("missionInfo")]
+        public MissionInfo MissionInfo; // either retrieveTarget or deliverTarget; same values required
+
+        public AddMissionMsg()
+        {
+            Type = "addMission";
+        }
 
 
     }
     public class MissionInfo
     {
-        public string taskType;
-        public float lat;
-        public float lng;
+        [Key("taskType")]
+        public string TaskType;
+        [Key("lat")]
+        public float Lat;
+        [Key("lng")]
+        public float Lng;
+    }
+
+    //////////////other messages//////////////
+    public class AckMsg : MsgClass
+    {
+        [Key("ackId")]
+        public int AckId;
+
+        public AckMsg()
+        {
+            Type = "ack";
+        }
+    }
+
+    public class BadMsg : MsgClass
+    {
+        public string Error;
+
+        public BadMsg()
+        {
+            Type = "badMessage";
+        }
     }
 }
+
 
 
 
