@@ -1,17 +1,15 @@
 # UAV Communication
 
-**Requirements**
+Capable of transforming a class into a JSON object, and to a msgpack object.
 
-[ThorsSerializer](https://github.com/Loki-Astari/ThorsSerializer/blob/master/doc/building.md), a Unix based JSON to struct converter
+**Acknowledgements**
+
+[JSON for Modern C++](https://github.com/nlohmann/json)
 
 **Running**
 
 Run the commands in your terminal application
 ```sh
-g++ -std=c++17 json.cpp -lThorSerialize17
-./a.out
+g++ -std=c++17 main.cpp -o main
+./main
 ```
-
-**To do**
-
-Implement sending JSON through an Xbee
