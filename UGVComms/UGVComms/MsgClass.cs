@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using MessagePack;
+﻿using MessagePack;
 
 namespace UGVComms
 {
@@ -22,6 +16,7 @@ namespace UGVComms
      * the effort as performance increases are negligible when comparing classes and structs.
      */
 
+    [MessagePackObject]
     public abstract class MsgClass
     {
         [Key("type")]
@@ -38,7 +33,6 @@ namespace UGVComms
 
     //////////////messages to be sent/////////////
 
-    [MessagePackObject]
     public class ConnectMsg : MsgClass
     {
         [Key("jobsAvailable")]
@@ -49,7 +43,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class UpdateMsg : MsgClass
     {
         [Key("lat")]
@@ -68,7 +61,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class CompleteMsg : MsgClass
     {
         public CompleteMsg()
@@ -79,7 +71,6 @@ namespace UGVComms
 
     //////////////messages to be received/////////////
 
-    [MessagePackObject]
     public class ConnAckMsg : MsgClass
     {
         public ConnAckMsg()
@@ -88,7 +79,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class StartMsg : MsgClass
     {
         [Key("jobType")]
@@ -99,7 +89,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class AddMissionMsg : MsgClass
     {
         [Key("missionInfo")]
@@ -110,7 +99,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class MissionInfo
     {
         [Key("taskType")]
@@ -121,7 +109,6 @@ namespace UGVComms
         public float Lng;
     }
 
-    [MessagePackObject]
     public class PauseMsg : MsgClass
     {
         public PauseMsg()
@@ -130,7 +117,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class ResumeMsg : MsgClass
     {
         public ResumeMsg()
@@ -139,7 +125,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class StopMsg : MsgClass
     {
         public StopMsg()
@@ -150,7 +135,6 @@ namespace UGVComms
 
     //////////////other messages//////////////
 
-    [MessagePackObject]
     public class AckMsg : MsgClass
     {
         [Key("ackId")]
@@ -161,7 +145,6 @@ namespace UGVComms
         }
     }
 
-    [MessagePackObject]
     public class BadMsg : MsgClass
     {
         [Key("error")]

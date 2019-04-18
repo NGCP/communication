@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Timers;
 
 using MessagePack;
@@ -19,12 +18,23 @@ namespace UGVComms
 
         private static long offset = 0;
         private static int messageId = 0;
+        private static string status = "disconnected"; // status types: disconnected, ready, waiting, running, paused, error
         private static readonly Dictionary<int, MsgClass> outboxMsg = new Dictionary<int, MsgClass>();
 
         private static readonly Timer sendTimer = new Timer();
 
         public static void Main()
         {
+            //UpdateMsg msg = new UpdateMsg()
+            //{
+            //    Id = messageId,
+            //    Tid = 0,
+            //    Time = Time(),
+            //    Status = "ready",
+            //};
+            //Console.WriteLine(MessagePackSerializer.ToJson(msg));
+            //Console.ReadLine();
+
             InitializeConnection(portName, baudRate, destinationMAC);
         }
 
@@ -52,12 +62,18 @@ namespace UGVComms
             {
                 Id = messageId,
                 Tid = 0,
-                JobsAvailable = new string[] { "ugvRescue" },
                 Time = Time(),
+
+                JobsAvailable = new string[] { "ugvRescue" },
             };
             AddToOutbox(connect);
         }
 
+        /**
+         * NEVER acknowledge an incorrect message. Send a bad message and exit! If the vehicle is in an incorrect state, the vehicle
+         * must NOT acknowledge an incorrect message. If UGV is not "ready", it should not acknowledge "addMission"
+         * messages. This also goes if GCS assigns an invalid job/task to the UGV, do NOT acknowledge.
+         */
         private static void ReceiveMessage(object sender, SourcedDataReceivedEventArgs eventArgs)
         {
             MsgClass msg;
@@ -75,51 +91,29 @@ namespace UGVComms
             switch (msg.Type)
             {
                 case "connectionAck":
-                    ConnAckMsg connAck = MessagePackSerializer.Deserialize<ConnAckMsg>(eventArgs.Data);
-                    Acknowledge(connAck);
-
-                    offset = connAck.Time - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    // TODO: start sending update messages to GCS
-
-                    Console.WriteLine("Connecting");
-                    Console.WriteLine("Time: " + connAck.Time);
-                    Console.WriteLine("");
-                    Console.WriteLine("Awaiting command...");
-                    Console.WriteLine("");
+                    ProcessConnAckMsg(MessagePackSerializer.Deserialize<ConnAckMsg>(eventArgs.Data));
                     break;
+
                 case "start":
-                    StartMsg start = MessagePackSerializer.Deserialize<StartMsg>(eventArgs.Data);
-                    Acknowledge(start);
-                    // TODO: add check to ensure UGV can perform the job (is in "ready" state, jobType is "ugvRescue")
-
-                    Console.WriteLine("Starting Mission");
-                    Console.WriteLine(start.jobType);
+                    ProcessStartMsg(MessagePackSerializer.Deserialize<StartMsg>(eventArgs.Data));
                     break;
+
                 case "addMission":
-                    AddMissionMsg addMission = MessagePackSerializer.Deserialize<AddMissionMsg>(eventArgs.Data);
-                    Acknowledge(addMission);
-                    // TODO: add check to ensure UGV can perform the task (is in "waiting" state, and valid task for jobType)
+                    ProcessAddMissionMsg(MessagePackSerializer.Deserialize<AddMissionMsg>(eventArgs.Data));
+                    break;
 
-                    Console.WriteLine("Adding Mission");
-                    Console.WriteLine("Latitude: " + addMission.MissionInfo.Lat);
-                    Console.WriteLine("Longitude: " + addMission.MissionInfo.Lng);
-                    break;
                 case "pause":
-                    PauseMsg pause = MessagePackSerializer.Deserialize<PauseMsg>(eventArgs.Data);
-                    Acknowledge(pause);
-                    // TODO: add check to ensure UGV is in a "running" state before pausing.
+                    ProcessPauseMsg(MessagePackSerializer.Deserialize<PauseMsg>(eventArgs.Data));
                     break;
+
                 case "resume":
-                    ResumeMsg resume = MessagePackSerializer.Deserialize<ResumeMsg>(eventArgs.Data);
-                    Acknowledge(resume);
-                    // TODO: add check to ensure UGV is in a "paused" state before resuming.
+                    ProcessResumeMsg(MessagePackSerializer.Deserialize<ResumeMsg>(eventArgs.Data));
                     break;
+
                 case "stop":
-                    StopMsg stop = MessagePackSerializer.Deserialize<StopMsg>(eventArgs.Data);
-                    Acknowledge(stop);
-                    // TODO: ensure UGV will not break if this message is sent when it is in "ready" state
-                    // UGV must go back to "ready" state if it is in "waiting" or "running" or "paused" state.
+                    ProcessStopMsg(MessagePackSerializer.Deserialize<StopMsg>(eventArgs.Data));
                     break;
+
                 case "ack":
                     AckMsg ack = MessagePackSerializer.Deserialize<AckMsg>(eventArgs.Data);
                     outboxMsg.Remove(ack.AckId);
@@ -127,23 +121,39 @@ namespace UGVComms
                     Console.WriteLine("Acknowledgement Received");
                     Console.WriteLine("AckId: " + ack.AckId);
                     break;
+
                 default:
-                    BadMsg bad = new BadMsg()
-                    {
-                        Id = messageId,
-                        Tid = msg.Sid,
-                        Time = Time(),
-                        Error = "Message type is unrecognized by UGV",
-                    };
-                    SendMessage(bad);
+                    BadMessage(msg, "Message type is unrecognized by UGV");
                     break;
             }
         }
 
+        /**
+         * Add message to outbox to be sent.
+         */
         private static void AddToOutbox(MsgClass msg)
         {
             outboxMsg.Add(messageId, msg);
             messageId += 1;
+        }
+
+        /**
+         * Support function for the timer to run. Do not run this outside of the timer.
+         */
+        private static void SendMessages(Object source, ElapsedEventArgs e)
+        {
+            foreach (KeyValuePair<int, MsgClass> entry in outboxMsg)
+            {
+                SendMessage(entry.Value);
+            }
+        }
+        
+        /**
+         * Run this if you are sending a single message.
+         */
+        private static async void SendMessage(MsgClass msg)
+        {
+            await toXbee.TransmitDataAsync(MessagePackSerializer.Serialize(msg));
         }
 
         private static void Acknowledge(MsgClass msg)
@@ -152,32 +162,153 @@ namespace UGVComms
             {
                 Id = messageId,
                 Tid = msg.Sid,
-                AckId = msg.Id,
                 Time = Time(),
+                AckId = msg.Id,
             };
             SendMessage(ack);
         }
 
-        /**
-         * Only run this function for messages that are not going to be sent once.
-         * Messages that should only be sent once (ack + badMessage) should just be sent once.
-         */
-        private static void SendMessages(Object source, ElapsedEventArgs e)
+        private static void BadMessage(MsgClass msg, string error)
         {
-            foreach(KeyValuePair<int, MsgClass> entry in outboxMsg)
+            BadMsg bad = new BadMsg()
             {
-                SendMessage(entry.Value);
-            }
+                Id = messageId,
+                Tid = msg.Sid,
+                Time = Time(),
+                Error = error,
+            };
+            SendMessage(bad);
         }
 
-        private static async void SendMessage(MsgClass msg)
-        {
-            await toXbee.TransmitDataAsync(MessagePackSerializer.Serialize(msg));
-        }
-
+        /**
+         * Gets current time with GCS offset.
+         */
         private static long Time()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + offset;
+        }
+
+        private static void ProcessConnAckMsg(ConnAckMsg msg)
+        {
+            if (status != "disconnected")
+            {
+                Console.WriteLine("ERROR: Received connectionAck message while status is {0}", status);
+                BadMessage(msg, "Received connectionAck message while status is " + status);
+                return;
+            }
+
+            Acknowledge(msg);
+            offset = msg.Time - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            status = "ready";
+
+            // TODO: start sending update messages to GCS
+
+            Console.WriteLine("Connecting");
+            Console.WriteLine("Time: " + msg.Time);
+            Console.WriteLine("");
+            Console.WriteLine("Awaiting command...");
+            Console.WriteLine("");
+        }
+
+        private static void ProcessStartMsg(StartMsg msg)
+        {
+            if (status != "ready")
+            {
+                Console.WriteLine("ERROR: Received start message while status is {0}", status);
+                BadMessage(msg, "Received start message while status is " + status);
+                return;
+            }
+
+            if (msg.jobType != "ugvRescue")
+            {
+                Console.WriteLine("ERROR: Received incorrect jobType {0} from start message", msg.jobType);
+                BadMessage(msg, "Received incorrect jobType " + msg.jobType + " from start message");
+                return;
+            }
+
+
+            // TODO: Wait for confirmation that UGV is running before changing state to "running"
+            // Something like the following... software will need to implement startJob function, or something similar
+            // bool success = startJob(msg.jobType);
+            // if (success) {
+            //    state = "waiting";
+            // } else {
+            //    send error message or something idk, put vehicle on error state probably so GCS can stop mission
+            // }
+            // Acknowledge afterwards
+
+            Acknowledge(msg);
+
+            Console.WriteLine("Starting Mission");
+            Console.WriteLine(msg.jobType);
+        }
+
+        private static void ProcessAddMissionMsg(AddMissionMsg msg)
+        {
+            if (status != "waiting")
+            {
+                Console.WriteLine("ERROR: Received addMission message while status is {0}", status);
+                BadMessage(msg, "Received addMission message while status is " + status);
+                return;
+            }
+
+            if (msg.MissionInfo.TaskType != "retrieveTarget" && msg.MissionInfo.TaskType != "deliverTarget")
+            {
+                Console.WriteLine("ERROR: Received incorrect taskType {0} from addMission message", msg.MissionInfo.TaskType);
+                BadMessage(msg, "Received incorrect taskType " + msg.MissionInfo.TaskType + " from addMission message");
+                return;
+            }
+
+            // TODO: Wait for confirmation that UGV is running before changing state to "running"
+            // Something like the following... software will need to implement startTask function, or something similar
+            // if (success) {
+            //    state = "running";
+            // } else {
+            //    send error message or something idk, put vehicle on error state probably so GCS can stop mission
+            // }
+            // Acknowledge afterwards
+
+            Acknowledge(msg);
+
+            Console.WriteLine("Adding Mission");
+            Console.WriteLine("Latitude: " + msg.MissionInfo.Lat);
+            Console.WriteLine("Longitude: " + msg.MissionInfo.Lng);
+        }
+
+        private static void ProcessPauseMsg(PauseMsg msg)
+        {
+            if (status != "running")
+            {
+                Console.WriteLine("ERROR: Received pause message while status is {0}", status);
+                BadMessage(msg, "Received pause message while status is " + status);
+                return;
+            }
+
+            // TODO: Wait for confirmation that UGV is paused before changing state to "paused"
+
+            Acknowledge(msg);
+        }
+
+        private static void ProcessResumeMsg(ResumeMsg msg)
+        {
+            if (status != "paused")
+            {
+                Console.WriteLine("ERROR: Received resume message while status is {0}", status);
+                BadMessage(msg, "Received resume message while status is " + status);
+                return;
+            }
+
+            // TODO: Wait for confirmation that UGV has resumed before changing state to "running"
+            Acknowledge(msg);
+        }
+
+        private static void ProcessStopMsg(StopMsg msg)
+        {
+            // GCS can send stop message even if vehicle is ready (usually its because other vehicles arent working right)
+            if (status != "waiting" && status != "running" && status != "paused") return;
+
+            // TODO: Wait for confirmation that UGV has stopped before changing state to "ready"
+            Acknowledge(msg);
         }
     }
 }
