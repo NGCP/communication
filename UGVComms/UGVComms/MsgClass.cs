@@ -22,8 +22,7 @@ namespace UGVComms
      * the effort as performance increases are negligible when comparing classes and structs.
      */
 
-    [MessagePackObject]
-    public class MsgClass
+    public abstract class MsgClass
     {
         [Key("type")]
         public string Type;
@@ -35,13 +34,6 @@ namespace UGVComms
         public int Tid;
         [Key("time")]
         public long Time;
-
-        public MsgClass(int id, int tid, long offset)
-        {
-            Id = id;
-            Tid = tid;
-            Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + offset;
-        }
     }
 
     //////////////messages to be sent/////////////
@@ -50,9 +42,8 @@ namespace UGVComms
     public class ConnectMsg : MsgClass
     {
         [Key("jobsAvailable")]
-        public string[] JobsAvailable = { "ugvRescue" };
-
-        public ConnectMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public string[] JobsAvailable;
+        public ConnectMsg()
         {
             Type = "connect";
         }
@@ -71,8 +62,7 @@ namespace UGVComms
         public float Heading;
         [Key("battery")]
         public float Battery;
-
-        public UpdateMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public UpdateMsg()
         {
             Type = "update";
         }
@@ -81,7 +71,7 @@ namespace UGVComms
     [MessagePackObject]
     public class CompleteMsg : MsgClass
     {
-        public CompleteMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public CompleteMsg()
         {
             Type = "complete";
         }
@@ -90,33 +80,31 @@ namespace UGVComms
     //////////////messages to be received/////////////
 
     [MessagePackObject]
-    public class ConnAckMsg : MsgClass      
- 	{
-        public ConnAckMsg(int id, int tid, long offset) : base(id, tid, offset)
+    public class ConnAckMsg : MsgClass
+    {
+        public ConnAckMsg()
         {
             Type = "connectionAck";
         }
     }
 
     [MessagePackObject]
-    public class StartMsg : MsgClass        
- 	{
+    public class StartMsg : MsgClass
+    {
         [Key("jobType")]
         public string jobType;
-
-        public StartMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public StartMsg()
         {
             Type = "start";
         }
     }
 
     [MessagePackObject]
-    public class AddMissionMsg : MsgClass  
- 	{
+    public class AddMissionMsg : MsgClass
+    {
         [Key("missionInfo")]
         public MissionInfo MissionInfo; // either retrieveTarget or deliverTarget; same values required
-
-        public AddMissionMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public AddMissionMsg()
         {
             Type = "addMission";
         }
@@ -133,6 +121,33 @@ namespace UGVComms
         public float Lng;
     }
 
+    [MessagePackObject]
+    public class PauseMsg : MsgClass
+    {
+        public PauseMsg()
+        {
+            Type = "pause";
+        }
+    }
+
+    [MessagePackObject]
+    public class ResumeMsg : MsgClass
+    {
+        public ResumeMsg()
+        {
+            Type = "resume";
+        }
+    }
+
+    [MessagePackObject]
+    public class StopMsg : MsgClass
+    {
+        public StopMsg()
+        {
+            Type = "stop";
+        }
+    }
+
     //////////////other messages//////////////
 
     [MessagePackObject]
@@ -140,8 +155,7 @@ namespace UGVComms
     {
         [Key("ackId")]
         public int AckId;
-
-        public AckMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public AckMsg()
         {
             Type = "ack";
         }
@@ -152,15 +166,9 @@ namespace UGVComms
     {
         [Key("error")]
         public string Error;
-
-        public BadMsg(int id, int tid, long offset) : base(id, tid, offset)
+        public BadMsg()
         {
             Type = "badMessage";
         }
     }
 }
-
-
-
-
-

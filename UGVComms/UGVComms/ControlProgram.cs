@@ -48,18 +48,38 @@ namespace UGVComms
 
         private static void SendConnect()
         {
-            CreateMessage(new ConnectMsg(messageId, 0, offset));
+            ConnectMsg connect = new ConnectMsg()
+            {
+                Id = messageId,
+                Tid = 0,
+                JobsAvailable = new string[] { "ugvRescue" },
+                Time = Time(),
+            };
+            AddToOutbox(connect);
         }
 
         private static void ReceiveMessage(object sender, SourcedDataReceivedEventArgs eventArgs)
         {
-            MsgClass msg = MessagePackSerializer.Deserialize<MsgClass>(eventArgs.Data);
+            MsgClass msg;
+
+            try
+            {
+                msg = MessagePackSerializer.Deserialize<MsgClass>(eventArgs.Data);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Received invalid message {0}", eventArgs.Data.ToString());
+                return;
+            }
 
             switch (msg.Type)
             {
                 case "connectionAck":
                     ConnAckMsg connAck = MessagePackSerializer.Deserialize<ConnAckMsg>(eventArgs.Data);
+                    Acknowledge(connAck);
+
                     offset = connAck.Time - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    // TODO: start sending update messages to GCS
 
                     Console.WriteLine("Connecting");
                     Console.WriteLine("Time: " + connAck.Time);
@@ -69,6 +89,7 @@ namespace UGVComms
                     break;
                 case "start":
                     StartMsg start = MessagePackSerializer.Deserialize<StartMsg>(eventArgs.Data);
+                    Acknowledge(start);
                     // TODO: add check to ensure UGV can perform the job (is in "ready" state, jobType is "ugvRescue")
 
                     Console.WriteLine("Starting Mission");
@@ -76,6 +97,7 @@ namespace UGVComms
                     break;
                 case "addMission":
                     AddMissionMsg addMission = MessagePackSerializer.Deserialize<AddMissionMsg>(eventArgs.Data);
+                    Acknowledge(addMission);
                     // TODO: add check to ensure UGV can perform the task (is in "waiting" state, and valid task for jobType)
 
                     Console.WriteLine("Adding Mission");
@@ -83,10 +105,20 @@ namespace UGVComms
                     Console.WriteLine("Longitude: " + addMission.MissionInfo.Lng);
                     break;
                 case "pause":
+                    PauseMsg pause = MessagePackSerializer.Deserialize<PauseMsg>(eventArgs.Data);
+                    Acknowledge(pause);
                     // TODO: add check to ensure UGV is in a "running" state before pausing.
                     break;
                 case "resume":
+                    ResumeMsg resume = MessagePackSerializer.Deserialize<ResumeMsg>(eventArgs.Data);
+                    Acknowledge(resume);
                     // TODO: add check to ensure UGV is in a "paused" state before resuming.
+                    break;
+                case "stop":
+                    StopMsg stop = MessagePackSerializer.Deserialize<StopMsg>(eventArgs.Data);
+                    Acknowledge(stop);
+                    // TODO: ensure UGV will not break if this message is sent when it is in "ready" state
+                    // UGV must go back to "ready" state if it is in "waiting" or "running" or "paused" state.
                     break;
                 case "ack":
                     AckMsg ack = MessagePackSerializer.Deserialize<AckMsg>(eventArgs.Data);
@@ -96,15 +128,34 @@ namespace UGVComms
                     Console.WriteLine("AckId: " + ack.AckId);
                     break;
                 default:
-                    SendMessage(new BadMsg(messageId, 0, offset));
+                    BadMsg bad = new BadMsg()
+                    {
+                        Id = messageId,
+                        Tid = msg.Sid,
+                        Time = Time(),
+                        Error = "Message type is unrecognized by UGV",
+                    };
+                    SendMessage(bad);
                     break;
             }
         }
 
-        private static void CreateMessage(MsgClass msg)
+        private static void AddToOutbox(MsgClass msg)
         {
             outboxMsg.Add(messageId, msg);
             messageId += 1;
+        }
+
+        private static void Acknowledge(MsgClass msg)
+        {
+            AckMsg ack = new AckMsg()
+            {
+                Id = messageId,
+                Tid = msg.Sid,
+                AckId = msg.Id,
+                Time = Time(),
+            };
+            SendMessage(ack);
         }
 
         /**
@@ -119,9 +170,14 @@ namespace UGVComms
             }
         }
 
-        static async void SendMessage(MsgClass msg)
+        private static async void SendMessage(MsgClass msg)
         {
             await toXbee.TransmitDataAsync(MessagePackSerializer.Serialize(msg));
+        }
+
+        private static long Time()
+        {
+            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + offset;
         }
     }
 }
