@@ -36,11 +36,6 @@ namespace UGVComms
         [Key("time")]
         public long Time;
 
-        public MsgClass()
-        {
-            Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        }
-
         public MsgClass(int id, int tid, long offset)
         {
             Id = id;
@@ -56,11 +51,6 @@ namespace UGVComms
     {
         [Key("jobsAvailable")]
         public string[] JobsAvailable = { "ugvRescue" };
-
-        public ConnectMsg()
-        {
-            Type = "connect";
-        }
 
         public ConnectMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
@@ -82,11 +72,6 @@ namespace UGVComms
         [Key("battery")]
         public float Battery;
 
-        public UpdateMsg()
-        {
-            Type = "update";
-        }
-
         public UpdateMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
             Type = "update";
@@ -96,11 +81,6 @@ namespace UGVComms
     [MessagePackObject]
     public class CompleteMsg : MsgClass
     {
-        public CompleteMsg()
-        {
-            Type = "complete";
-        }
-
         public CompleteMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
             Type = "complete";
@@ -112,11 +92,6 @@ namespace UGVComms
     [MessagePackObject]
     public class ConnAckMsg : MsgClass      
  	{
-        public ConnAckMsg()
-        {
-            Type = "connectionAck";
-        }
-
         public ConnAckMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
             Type = "connectionAck";
@@ -129,11 +104,6 @@ namespace UGVComms
         [Key("jobType")]
         public string jobType;
 
-        public StartMsg()
-        {
-            Type = "start";
-        }
-
         public StartMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
             Type = "start";
@@ -145,11 +115,6 @@ namespace UGVComms
  	{
         [Key("missionInfo")]
         public MissionInfo MissionInfo; // either retrieveTarget or deliverTarget; same values required
-
-        public AddMissionMsg()
-        {
-            Type = "addMission";
-        }
 
         public AddMissionMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
@@ -176,11 +141,6 @@ namespace UGVComms
         [Key("ackId")]
         public int AckId;
 
-        public AckMsg()
-        {
-            Type = "ack";
-        }
-
         public AckMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
             Type = "ack";
@@ -192,11 +152,6 @@ namespace UGVComms
     {
         [Key("error")]
         public string Error;
-
-        public BadMsg()
-        {
-            Type = "badMessage";
-        }
 
         public BadMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
