@@ -30,14 +30,28 @@ namespace UGVComms
         [Key("id")]
         public int Id;
         [Key("sid")]
-        public int Sid;
+        public int Sid = 200;
         [Key("tid")]
         public int Tid;
         [Key("time")]
-        public long Time = (long) DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public long Time;
+
+        public MsgClass()
+        {
+            Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        }
+
+        public MsgClass(int id, int tid, long offset)
+        {
+            Id = id;
+            Tid = tid;
+            Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + offset;
+        }
     }
 
     //////////////messages to be sent/////////////
+
+    [MessagePackObject]
     public class ConnectMsg : MsgClass
     {
         [Key("jobsAvailable")]
@@ -47,8 +61,14 @@ namespace UGVComms
         {
             Type = "connect";
         }
+
+        public ConnectMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "connect";
+        }
     }
 
+    [MessagePackObject]
     public class UpdateMsg : MsgClass
     {
         [Key("lat")]
@@ -64,28 +84,47 @@ namespace UGVComms
 
         public UpdateMsg()
         {
-            Type = "connect";
+            Type = "update";
+        }
+
+        public UpdateMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "update";
         }
     }
 
+    [MessagePackObject]
     public class CompleteMsg : MsgClass
     {
         public CompleteMsg()
         {
             Type = "complete";
         }
+
+        public CompleteMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "complete";
+        }
     }
-    
+
     //////////////messages to be received/////////////
+
+    [MessagePackObject]
     public class ConnAckMsg : MsgClass      
  	{
         public ConnAckMsg()
         {
             Type = "connectionAck";
         }
- 	}
- 	
- 	public class StartMsg : MsgClass        
+
+        public ConnAckMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "connectionAck";
+        }
+    }
+
+    [MessagePackObject]
+    public class StartMsg : MsgClass        
  	{
         [Key("jobType")]
         public string jobType;
@@ -94,9 +133,15 @@ namespace UGVComms
         {
             Type = "start";
         }
- 	}
- 	
- 	public class AddMissionMsg : MsgClass  
+
+        public StartMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "start";
+        }
+    }
+
+    [MessagePackObject]
+    public class AddMissionMsg : MsgClass  
  	{
         [Key("missionInfo")]
         public MissionInfo MissionInfo; // either retrieveTarget or deliverTarget; same values required
@@ -106,8 +151,13 @@ namespace UGVComms
             Type = "addMission";
         }
 
-
+        public AddMissionMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "addMission";
+        }
     }
+
+    [MessagePackObject]
     public class MissionInfo
     {
         [Key("taskType")]
@@ -119,6 +169,8 @@ namespace UGVComms
     }
 
     //////////////other messages//////////////
+
+    [MessagePackObject]
     public class AckMsg : MsgClass
     {
         [Key("ackId")]
@@ -128,13 +180,25 @@ namespace UGVComms
         {
             Type = "ack";
         }
+
+        public AckMsg(int id, int tid, long offset) : base(id, tid, offset)
+        {
+            Type = "ack";
+        }
     }
 
+    [MessagePackObject]
     public class BadMsg : MsgClass
     {
+        [Key("error")]
         public string Error;
 
         public BadMsg()
+        {
+            Type = "badMessage";
+        }
+
+        public BadMsg(int id, int tid, long offset) : base(id, tid, offset)
         {
             Type = "badMessage";
         }

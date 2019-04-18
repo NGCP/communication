@@ -1,114 +1,66 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Timers;
 
+using MessagePack;
 using XBee;
-using Newtonsoft.Json;
 
 namespace UGVComms
 {
     class ControlProgram
     {
-        private const string PortName = "COM3";
-        private const int BaudRate = 57600;
-        public const string DestinationMAC = "0013A20040A5430F";
-        private int messageID = 0;
-        static ManualResetEvent _quitEvent = new ManualResetEvent(false);
-        // Sending (xbee) and receiving (toXbee) xbees
-        static XBeeController xbee = new XBeeController();
-        static XBeeNode toXbee;
-        public static System.Timers.Timer timer = new System.Timers.Timer();
+        private const string portName = "COM3";
+        private const int baudRate = 57600;
+        private const string destinationMAC = "0013A20040A5430F";
 
-        static void Main(string[] args)
+        private static readonly XBeeController xbee = new XBeeController();
+        private static XBeeNode toXbee;
+
+        private static long offset = 0;
+        private static int messageId = 0;
+        private static Dictionary<int, MsgClass> outboxMsg = new Dictionary<int, MsgClass>();
+
+        private static readonly Timer sendTimer = new Timer();
+
+        public static void Main()
         {
-            
-            // Important: Ctrl+C to exit program
-            // Allows the program to continue to run until it is exited
-            Console.CancelKeyPress += (sender, eArgs) => {
-                _quitEvent.Set();
-                eArgs.Cancel = true;
-            };
-
-            initializeConnection(PortName, BaudRate, DestinationMAC);
-            Console.WriteLine("Press enter to send connection request");
-            Console.ReadLine();
-            //sendConnect();
-            ConnectMsg conn = new ConnectMsg();
-            conn.Time = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
-            createAndSendMessage(JsonConvert.SerializeObject(conn));
-
-            _quitEvent.WaitOne();
+            InitializeConnection(portName, baudRate, destinationMAC);
         }
 
-        static async void initializeConnection(string PortName, int BaudRate, string DestinationMAC)
+        private static async void InitializeConnection(string portName, int baudRate, string destinationMAC)
         {
-            MsgClass message;
-            
-
             // Opens this xbee to connection
-            await xbee.OpenAsync(PortName, BaudRate);
+            await xbee.OpenAsync(portName, baudRate);
+
             // Find the destination xbee and assign it to toXBee;
             // "AllowHexSpecifer" is needed to accept hex values A-F
-            toXbee = await xbee.GetNodeAsync(new NodeAddress(new LongAddress(UInt64.Parse(DestinationMAC, System.Globalization.NumberStyles.AllowHexSpecifier))));
+            toXbee = await xbee.GetNodeAsync(new NodeAddress(new LongAddress(UInt64.Parse(destinationMAC, System.Globalization.NumberStyles.AllowHexSpecifier))));
 
-            xbee.DataReceived += (sender, eventArgs) =>
-            {
-                // Received data is stored in a string in this class for further use
-                string jsonString = Encoding.UTF8.GetString(eventArgs.Data);
-                
-                try
-                {
-                    // Converts the received data into usable json
-                    message = JsonConvert.DeserializeObject<MsgClass>(jsonString);
-                    checkType(message, jsonString);
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine("Data received was not a json!");
-                }
-            };
+            xbee.DataReceived += ReceiveMessage;
+
+            sendTimer.Elapsed += SendMessages;
+            sendTimer.Interval = 1000;
+            sendTimer.Enabled = true;
+
+            SendConnect();
         }
 
-        /*
-        static async void sendConnect()
+        private static void SendConnect()
         {
-            ConnectMsg conn = new ConnectMsg();
-            conn.Time = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
-            await toXbee.TransmitDataAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(conn)));
-        }
-        */
-
-        static async void sendMessage(object source, ElapsedEventArgs e, string json)
-        {
-            await toXbee.TransmitDataAsync(Encoding.UTF8.GetBytes(json));
+            CreateMessage(new ConnectMsg(messageId, 0, offset));
         }
 
-
-        static async void createAndSendMessage(string json)
+        private static void ReceiveMessage(object sender, SourcedDataReceivedEventArgs eventArgs)
         {
-            
-            timer.Interval = 500;
-            timer.Elapsed += new ElapsedEventHandler((sender, e) => sendMessage(sender, e, json));
-            timer.AutoReset = true;
-            timer.Enabled = true;
+            MsgClass msg = MessagePackSerializer.Deserialize<MsgClass>(eventArgs.Data);
 
-
-        }
-
-        // Data processing
-
-        // Checks "type" field of received data to determine what to do next
-        static void checkType(MsgClass msg, string json)
-        {
-            string type = msg.type;
-            switch(type)
+            switch (msg.Type)
             {
                 case "connectionAck":
-                    ConnAckMsg connAck = JsonConvert.DeserializeObject<ConnAckMsg>(json);
+                    ConnAckMsg connAck = MessagePackSerializer.Deserialize<ConnAckMsg>(eventArgs.Data);
+                    offset = connAck.Time - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
                     Console.WriteLine("Connecting");
                     Console.WriteLine("Time: " + connAck.Time);
                     Console.WriteLine("");
@@ -116,22 +68,60 @@ namespace UGVComms
                     Console.WriteLine("");
                     break;
                 case "start":
-                    StartMsg start = JsonConvert.DeserializeObject<StartMsg>(json);
+                    StartMsg start = MessagePackSerializer.Deserialize<StartMsg>(eventArgs.Data);
+                    // TODO: add check to ensure UGV can perform the job (is in "ready" state, jobType is "ugvRescue")
+
                     Console.WriteLine("Starting Mission");
                     Console.WriteLine(start.jobType);
                     break;
                 case "addMission":
-                    AddMissionMsg addMsg = JsonConvert.DeserializeObject<AddMissionMsg>(json);
+                    AddMissionMsg addMission = MessagePackSerializer.Deserialize<AddMissionMsg>(eventArgs.Data);
+                    // TODO: add check to ensure UGV can perform the task (is in "waiting" state, and valid task for jobType)
+
                     Console.WriteLine("Adding Mission");
-                    Console.WriteLine("Latitude: " + addMsg.missionInfo.lat);
-                    Console.WriteLine("Longitude: " + addMsg.missionInfo.lng);
+                    Console.WriteLine("Latitude: " + addMission.MissionInfo.Lat);
+                    Console.WriteLine("Longitude: " + addMission.MissionInfo.Lng);
+                    break;
+                case "pause":
+                    // TODO: add check to ensure UGV is in a "running" state before pausing.
+                    break;
+                case "resume":
+                    // TODO: add check to ensure UGV is in a "paused" state before resuming.
                     break;
                 case "ack":
-                    timer.Stop();
-                    RecAckMsg recAck = JsonConvert.DeserializeObject<RecAckMsg>(json);
+                    AckMsg ack = MessagePackSerializer.Deserialize<AckMsg>(eventArgs.Data);
+                    outboxMsg.Remove(ack.AckId);
+
                     Console.WriteLine("Acknowledgement Received");
+                    Console.WriteLine("AckId: " + ack.AckId);
+                    break;
+                default:
+                    SendMessage(new BadMsg(messageId, 0, offset));
                     break;
             }
+        }
+
+        private static void CreateMessage(MsgClass msg)
+        {
+            outboxMsg.Add(messageId, msg);
+            messageId += 1;
+        }
+
+        /**
+         * Only run this function for messages that are not going to be sent once.
+         * Messages that should only be sent once (ack + badMessage) should just be sent once.
+         */
+        private static void SendMessages(Object source, ElapsedEventArgs e)
+        {
+            foreach(KeyValuePair<int, MsgClass> entry in outboxMsg)
+            {
+                SendMessage(entry.Value);
+            }
+        }
+
+        static async void SendMessage(MsgClass msg)
+        {
+            await toXbee.TransmitDataAsync(MessagePackSerializer.Serialize(msg));
         }
     }
 }
