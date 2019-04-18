@@ -19,7 +19,7 @@ namespace UGVComms
 
         private static long offset = 0;
         private static int messageId = 0;
-        private static Dictionary<int, MsgClass> outboxMsg = new Dictionary<int, MsgClass>();
+        private static readonly Dictionary<int, MsgClass> outboxMsg = new Dictionary<int, MsgClass>();
 
         private static readonly Timer sendTimer = new Timer();
 
