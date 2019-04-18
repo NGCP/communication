@@ -1,12 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using XBee;
-using Newtonsoft.Json;
 using System.Threading;
 using System.Timers;
+
+using XBee;
+using Newtonsoft.Json;
 
 namespace UGVComms
 {
