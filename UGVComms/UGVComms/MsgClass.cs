@@ -15,7 +15,10 @@ namespace UGVComms
      * Using structs for this implementation would prove to be less efficient and not worth
      * the effort as performance increases are negligible when comparing classes and structs.
      */
-
+    [Union(0, typeof(ConnectMsg))]
+    [Union(1, typeof(UpdateMsg))]
+    [Union(2, typeof(CompleteMsg))]
+    [Union(3, typeof(ConnAckMsg))]
     [MessagePackObject]
     public abstract class MsgClass
     {
@@ -31,8 +34,10 @@ namespace UGVComms
         public long Time;
     }
 
-    //////////////messages to be sent/////////////
+   
 
+    //////////////messages to be sent/////////////
+   // [MessagePackObject]
     public class ConnectMsg : MsgClass
     {
         [Key("jobsAvailable")]

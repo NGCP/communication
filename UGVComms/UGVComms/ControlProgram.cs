@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Timers;
 
 using MessagePack;
@@ -9,9 +10,9 @@ namespace UGVComms
 {
     class ControlProgram
     {
-        private const string portName = "COM3";
+        private const string portName = "COM6";
         private const int baudRate = 57600;
-        private const string destinationMAC = "0013A20040A5430F";
+        private const string destinationMAC = "0013A200419475BB";
 
         private static readonly XBeeController xbee = new XBeeController();
         private static XBeeNode toXbee;
@@ -36,6 +37,7 @@ namespace UGVComms
             //Console.ReadLine();
 
             InitializeConnection(portName, baudRate, destinationMAC);
+            Console.ReadLine();
         }
 
         private static async void InitializeConnection(string portName, int baudRate, string destinationMAC)
@@ -66,6 +68,8 @@ namespace UGVComms
 
                 JobsAvailable = new string[] { "ugvRescue" },
             };
+            //Console.WriteLine(MessagePackSerializer.ToJson(connect));
+
             AddToOutbox(connect);
         }
 
@@ -153,7 +157,13 @@ namespace UGVComms
          */
         private static async void SendMessage(MsgClass msg)
         {
-            await toXbee.TransmitDataAsync(MessagePackSerializer.Serialize(msg));
+            byte[] bytes = MessagePackSerializer.Serialize(msg);
+            //Console.WriteLine(j);
+            string hex = BitConverter.ToString(bytes);
+            Console.WriteLine(hex);
+            await toXbee.TransmitDataAsync(bytes);
+            
+
         }
 
         private static void Acknowledge(MsgClass msg)
