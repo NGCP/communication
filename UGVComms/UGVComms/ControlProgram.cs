@@ -10,9 +10,9 @@ namespace UGVComms
 {
     class ControlProgram
     {
-        private const string portName = "COM6";
+        private const string portName = "COM7";
         private const int baudRate = 57600;
-        private const string destinationMAC = "0013A200419475BB";
+        private const string destinationMAC = "0013A2004194754E";
 
         private static readonly XBeeController xbee = new XBeeController();
         private static XBeeNode toXbee;
@@ -68,7 +68,6 @@ namespace UGVComms
 
                 JobsAvailable = new string[] { "ugvRescue" },
             };
-            //Console.WriteLine(MessagePackSerializer.ToJson(connect));
 
             AddToOutbox(connect);
         }
@@ -157,13 +156,13 @@ namespace UGVComms
          */
         private static async void SendMessage(MsgClass msg)
         {
-            byte[] bytes = MessagePackSerializer.Serialize(msg);
-            //Console.WriteLine(j);
-            string hex = BitConverter.ToString(bytes);
-            Console.WriteLine(hex);
-            await toXbee.TransmitDataAsync(bytes);
-            
+            byte[] bytesUnion = MessagePackSerializer.Serialize(msg);
+            byte[] bytes = new byte[bytesUnion.Length - 2];
+            Array.Copy(bytesUnion, 2, bytes, 0, bytesUnion.Length - 2);
 
+            Console.WriteLine(MessagePackSerializer.ToJson(msg));
+            // Console.WriteLine(MessagePackSerializer.Deserialize<MsgClass>(bytes));
+            await toXbee.TransmitDataAsync(bytes);
         }
 
         private static void Acknowledge(MsgClass msg)
