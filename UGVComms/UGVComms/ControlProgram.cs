@@ -16,7 +16,7 @@ namespace UGVComms
         private const string DestinationMAC = "0013A200418EA9DE";
 
         private static double Offset = 0;
-        private const int SendRate = 100; // in milliseconds
+        private const int SendRate = 10000; // in milliseconds
         private static int MessageId = 0;
 
         private static string VehicleStatus = "disconnected"; // status types: disconnected, ready, waiting, running, paused, error
