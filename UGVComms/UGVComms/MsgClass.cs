@@ -27,7 +27,7 @@ namespace UGVComms
         [Key("tid")]
         public int Tid;
         [Key("time")]
-        public long Time;
+        public double Time;
     }
 
     //////////////messages to be sent/////////////
@@ -44,15 +44,15 @@ namespace UGVComms
     public class UpdateMsg : MsgClass
     {
         [Key("lat")]
-        public float Lat;
+        public double Lat;
         [Key("lng")]
-        public float Lng;
+        public double Lng;
         [Key("status")]
         public string Status;
         [Key("heading")]
-        public float Heading;
+        public double Heading;
         [Key("battery")]
-        public float Battery;
+        public double Battery;
         public UpdateMsg()
         {
             Type = "update";
@@ -114,9 +114,9 @@ namespace UGVComms
         [Key("taskType")]
         public string TaskType;
         [Key("lat")]
-        public float Lat;
+        public double Lat;
         [Key("lng")]
-        public float Lng;
+        public double Lng;
     }
 
     public class PauseMsg : MsgClass

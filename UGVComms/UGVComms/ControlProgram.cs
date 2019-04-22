@@ -11,14 +11,14 @@ namespace UGVComms
 {
     class ControlProgram
     {
-        private const string portName = "COM7";
+        private const string portName = "COM9";
         private const int baudRate = 57600;
-        private const string destinationMAC = "0013A2004194754E";
+        private const string destinationMAC = "0013A200419475BB";
 
         private static readonly XBeeController xbee = new XBeeController();
         private static XBeeNode toXbee;
 
-        private static long offset = 0;
+        private static double offset = 0;
         private static int messageId = 0;
         private static string status = "disconnected"; // status types: disconnected, ready, waiting, running, paused, error
         private static readonly Dictionary<int, MsgClass> outboxMsg = new Dictionary<int, MsgClass>();
@@ -226,7 +226,7 @@ namespace UGVComms
         /**
          * Gets current time with GCS offset.
          */
-        private static long Time()
+        private static double Time()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + offset;
         }
