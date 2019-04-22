@@ -5,14 +5,14 @@ namespace UGVComms
      // *** Name all float/long types to double
 
     [MessagePackObject]
-    public class MsgClass
+    public class Msg
     {
         [Key("type")]
         public string Type;
         [Key("id")]
         public int Id;
         [Key("sid")]
-        public int Sid = 200;
+        public int Sid;
         [Key("tid")]
         public int Tid;
         [Key("time")]
@@ -20,7 +20,7 @@ namespace UGVComms
     }
 
     //////////////messages to be sent/////////////
-    public class ConnectMsg : MsgClass
+    public class ConnectMsg : Msg
     {
         [Key("jobsAvailable")]
         public string[] JobsAvailable;
@@ -30,7 +30,7 @@ namespace UGVComms
         }
     }
 
-    public class UpdateMsg : MsgClass
+    public class UpdateMsg : Msg
     {
         [Key("lat")]
         public double Lat;
@@ -48,7 +48,7 @@ namespace UGVComms
         }
     }
 
-    public class POIMsg : MsgClass
+    public class POIMsg : Msg
     {
         [Key("lat")]
         public string Lat;
@@ -60,7 +60,7 @@ namespace UGVComms
         }
     }
 
-    public class CompleteMsg : MsgClass
+    public class CompleteMsg : Msg
     {
         public CompleteMsg()
         {
@@ -70,7 +70,7 @@ namespace UGVComms
 
     //////////////messages to be received/////////////
 
-    public class ConnAckMsg : MsgClass
+    public class ConnAckMsg : Msg
     {
         public ConnAckMsg()
         {
@@ -78,17 +78,17 @@ namespace UGVComms
         }
     }
 
-    public class StartMsg : MsgClass
+    public class StartMsg : Msg
     {
         [Key("jobType")]
-        public string jobType;
+        public string JobType;
         public StartMsg()
         {
             Type = "start";
         }
     }
 
-    public class AddMissionMsg : MsgClass
+    public class AddMissionMsg : Msg
     {
         [Key("missionInfo")]
         public MissionInfo MissionInfo; // either retrieveTarget or deliverTarget; same values required
@@ -108,7 +108,7 @@ namespace UGVComms
         public double Lng;
     }
 
-    public class PauseMsg : MsgClass
+    public class PauseMsg : Msg
     {
         public PauseMsg()
         {
@@ -116,7 +116,7 @@ namespace UGVComms
         }
     }
 
-    public class ResumeMsg : MsgClass
+    public class ResumeMsg : Msg
     {
         public ResumeMsg()
         {
@@ -124,7 +124,7 @@ namespace UGVComms
         }
     }
 
-    public class StopMsg : MsgClass
+    public class StopMsg : Msg
     {
         public StopMsg()
         {
@@ -132,7 +132,7 @@ namespace UGVComms
         }
     }
 
-    public class AckMsg : MsgClass
+    public class AckMsg : Msg
     {
         [Key("ackid")]
         public int AckId;
@@ -142,7 +142,7 @@ namespace UGVComms
         }
     }
 
-    public class BadMsg : MsgClass
+    public class BadMsg : Msg
     {
         [Key("error")]
         public string Error;
