@@ -170,6 +170,16 @@ namespace UGVComms
                 bytes = MessagePackSerializer.Serialize((CompleteMsg)msg);
                 json = MessagePackSerializer.ToJson((CompleteMsg)msg);
             }
+            else if (msg.Type == "ack")
+            {
+                bytes = MessagePackSerializer.Serialize((AckMsg)msg);
+                json = MessagePackSerializer.ToJson((AckMsg)msg);
+            }
+            else if (msg.Type == "badMessage")
+            {
+                bytes = MessagePackSerializer.Serialize((BadMsg)msg);
+                json = MessagePackSerializer.ToJson((BadMsg)msg);
+            }
 
             if (bytes.Length == 0)
             {
@@ -189,6 +199,7 @@ namespace UGVComms
                 Time = Time(),
                 AckId = msg.Id,
             };
+            messageId += 1;
             SendMessage(ack);
         }
 
@@ -201,6 +212,7 @@ namespace UGVComms
                 Time = Time(),
                 Error = error,
             };
+            messageId += 1;
             SendMessage(bad);
         }
 
