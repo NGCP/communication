@@ -86,6 +86,7 @@ namespace UGVComms
             {
                 case "connectionAck":
                     ProcessConnAckMsg(MessagePackSerializer.Deserialize<ConnAckMsg>(eventArgs.Data));
+                    outboxMsg.Remove(-1);
                     break;
 
                 case "start":
@@ -127,8 +128,14 @@ namespace UGVComms
          */
         private static void AddToOutbox(MsgClass msg)
         {
-            outboxMsg.Add(messageId, msg);
-            messageId += 1;
+            if (msg.Type == "connect")
+            {
+                outboxMsg.Add(-1, msg);
+            } else
+            {
+                outboxMsg.Add(messageId, msg);
+                messageId += 1;
+            }
         }
 
         /**
