@@ -134,7 +134,7 @@ namespace UGVComms
 
     public class AckMsg : MsgClass
     {
-        [Key("ackId")]
+        [Key("ackid")]
         public int AckId;
         public AckMsg()
         {
