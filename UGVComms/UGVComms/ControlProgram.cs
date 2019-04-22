@@ -4,6 +4,7 @@ using System.Text;
 using System.Timers;
 
 using MessagePack;
+using MessagePack.Resolvers;
 using XBee;
 
 namespace UGVComms
@@ -26,16 +27,6 @@ namespace UGVComms
 
         public static void Main()
         {
-            //UpdateMsg msg = new UpdateMsg()
-            //{
-            //    Id = messageId,
-            //    Tid = 0,
-            //    Time = Time(),
-            //    Status = "ready",
-            //};
-            //Console.WriteLine(MessagePackSerializer.ToJson(msg));
-            //Console.ReadLine();
-
             InitializeConnection(portName, baudRate, destinationMAC);
             Console.ReadLine();
         }
@@ -156,12 +147,36 @@ namespace UGVComms
          */
         private static async void SendMessage(MsgClass msg)
         {
-            byte[] bytesUnion = MessagePackSerializer.Serialize(msg);
-            byte[] bytes = new byte[bytesUnion.Length - 2];
-            Array.Copy(bytesUnion, 2, bytes, 0, bytesUnion.Length - 2);
+            byte[] bytes = new byte[] { };
+            string json = "";
 
-            Console.WriteLine(MessagePackSerializer.ToJson(msg));
-            // Console.WriteLine(MessagePackSerializer.Deserialize<MsgClass>(bytes));
+            if (msg.Type == "connect")
+            {
+                bytes = MessagePackSerializer.Serialize((ConnectMsg)msg);
+                json = MessagePackSerializer.ToJson((ConnectMsg)msg);
+            }
+            else if (msg.Type == "update")
+            {
+                bytes = MessagePackSerializer.Serialize((UpdateMsg)msg);
+                json = MessagePackSerializer.ToJson((UpdateMsg)msg);
+            }
+            else if (msg.Type == "poi")
+            {
+                bytes = MessagePackSerializer.Serialize((POIMsg)msg);
+                json = MessagePackSerializer.ToJson((POIMsg)msg);
+            }
+            else if (msg.Type == "complete")
+            {
+                bytes = MessagePackSerializer.Serialize((CompleteMsg)msg);
+                json = MessagePackSerializer.ToJson((CompleteMsg)msg);
+            }
+
+            if (bytes.Length == 0)
+            {
+                throw new IndexOutOfRangeException("Message type is wrong, cannot send this message");
+            }
+
+            Console.WriteLine(json);
             await toXbee.TransmitDataAsync(bytes);
         }
 
