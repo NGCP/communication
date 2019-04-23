@@ -181,7 +181,7 @@ namespace UGVComms
                     ProcessAckMsg(NewMessage, MessagePackSerializer.Deserialize<AckMsg>(Bytes));
                     break;
 
-                case "SendBadMessage":
+                case "badMessage":
                     ProcessBadMsg(NewMessage, MessagePackSerializer.Deserialize<BadMsg>(Bytes));
                     break;
 
