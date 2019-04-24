@@ -277,11 +277,9 @@ namespace UGVComms
 
         private static void ProcessPauseMsg(bool NewMessage, PauseMsg Msg)
         {
-            if (VehicleStatus != "running")
-            {
-                SendBadMessage(Msg, "Received pause message while status is " + VehicleStatus);
-                return;
-            }
+            // GCS can send pause messages to this vehicle anytime (it sends pause messages to all vehicles
+            // even those not related to mission)
+            if (VehicleStatus != "running") return;
 
             if (NewMessage)
             {
@@ -298,11 +296,9 @@ namespace UGVComms
 
         private static void ProcessResumeMsg(bool NewMessage, ResumeMsg Msg)
         {
-            if (VehicleStatus != "paused")
-            {
-                SendBadMessage(Msg, "Received resume message while status is " + VehicleStatus);
-                return;
-            }
+            // GCS can send resume messages to this vehicle anytime (it sends pause messages to all vehicles
+            // even those not related to mission)
+            if (VehicleStatus != "paused") return;
 
             // Only process each message once (so if the same message gets sent twice, ignore the second message)
             if (NewMessage)
