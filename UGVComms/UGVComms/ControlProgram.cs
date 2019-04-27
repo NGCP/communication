@@ -15,25 +15,31 @@ namespace UGVComms
         private const int BaudRate = 57600;
         private const string DestinationMAC = "0013A200418EA9DE";
 
-        private static double Offset = 0;
+        private  double Offset = 0;
         private const int SendRate = 10000; // in milliseconds
-        private static int MessageId = 0;
+        private int MessageId = 0;
 
-        private static string VehicleStatus = "disconnected"; // status types: disconnected, ready, waiting, running, paused, error
+        private string VehicleStatus = "disconnected"; // status types: disconnected, ready, waiting, running, paused, error
 
-        private static readonly XBeeController Xbee = new XBeeController();
-        private static XBeeNode ToXbee;
+        private readonly XBeeController Xbee = new XBeeController();
+        private XBeeNode ToXbee;
 
-        private static readonly Dictionary<int, Timer> TimerOutbox = new Dictionary<int, Timer>();
-        private static readonly Dictionary<int, int> LastReceivedMessageId = new Dictionary<int, int>();
+        private EventHandler ReceiveConnectionAck;
+        private EventHandler ReceiveStart;
+        private EventHandler ReceiveAddMission;
+        private EventHandler ReceivePause;
+        private EventHandler ReceiveResume;
+        private EventHandler ReceiveStop;
 
-        public static void Main()
+        private readonly Dictionary<int, Timer> TimerOutbox = new Dictionary<int, Timer>();
+        private readonly Dictionary<int, int> LastReceivedMessageId = new Dictionary<int, int>();
+
+        public ControlProgram()
         {
             InitializeConnection();
-            Console.ReadLine();
         }
 
-        private static async void InitializeConnection()
+        private async void InitializeConnection()
         {
             // Opens Xbee connection
             await Xbee.OpenAsync(PortName, BaudRate);
@@ -49,7 +55,7 @@ namespace UGVComms
             });
         }
 
-        private static void SendMessage(int TargetID, Msg Msg)
+        private void SendMessage(int TargetID, Msg Msg)
         {
             Msg.Id = MessageId;
             Msg.Sid = 200;
@@ -131,7 +137,7 @@ namespace UGVComms
          * 5. Ignore messages of old ID. See following link: https://ground-control-station.readthedocs.io/en/latest/communications/messages/other-messages.html#acknowledgement-message
          *    - however, ALWAYS acknowledge old messages if they are valid, otherwise send BAD MESSAGE
          */
-        private static void ReceiveMessage(byte[] Bytes)
+        private void ReceiveMessage(byte[] Bytes)
         {
             Msg Msg;
 
@@ -191,7 +197,7 @@ namespace UGVComms
             }
         }
 
-        private static void ProcessConnAckMsg(bool NewMessage, ConnAckMsg Msg)
+        private void ProcessConnAckMsg(bool NewMessage, ConnAckMsg Msg)
         {
             if (VehicleStatus != "disconnected")
             {
@@ -219,7 +225,7 @@ namespace UGVComms
             SendAcknowledgement(Msg);
         }
 
-        private static void ProcessStartMsg(bool NewMessage, StartMsg Msg)
+        private void ProcessStartMsg(bool NewMessage, StartMsg Msg)
         {
             if (VehicleStatus != "ready")
             {
@@ -238,7 +244,8 @@ namespace UGVComms
             {
                 LastReceivedMessageId[Msg.Sid] = Msg.Id;
 
-                // TODO: Start UGV Mission (no tasks yet) and get vehicle status to be "waiting"
+                EventHandler handler = ReceiveStart;
+                handler?.Invoke(this, new EventArgs());
                 VehicleStatus = "waiting";
                 Console.WriteLine("Starting {0} Mission", Msg.JobType);
             }
@@ -247,7 +254,7 @@ namespace UGVComms
             SendAcknowledgement(Msg);
         }
 
-        private static void ProcessAddMissionMsg(bool NewMessage, AddMissionMsg Msg)
+        private void ProcessAddMissionMsg(bool NewMessage, AddMissionMsg Msg)
         {
             if (VehicleStatus != "waiting")
             {
@@ -266,7 +273,8 @@ namespace UGVComms
             {
                 LastReceivedMessageId[Msg.Sid] = Msg.Id;
 
-                // TODO: Start UGV task and get vehicle status to be "running"
+                EventHandler handler = ReceiveAddMission;
+                handler?.Invoke(this, new EventArgs());
                 VehicleStatus = "running";
                 Console.WriteLine("Starting {0} Task, Lat: {1}, Lng: {2}", Msg.MissionInfo.TaskType, Msg.MissionInfo.Lat, Msg.MissionInfo.Lng);
             }
@@ -275,7 +283,7 @@ namespace UGVComms
             SendAcknowledgement(Msg);
         }
 
-        private static void ProcessPauseMsg(bool NewMessage, PauseMsg Msg)
+        private void ProcessPauseMsg(bool NewMessage, PauseMsg Msg)
         {
             // GCS can send pause messages to this vehicle anytime (it sends pause messages to all vehicles
             // even those not related to mission)
@@ -285,7 +293,8 @@ namespace UGVComms
             {
                 LastReceivedMessageId[Msg.Sid] = Msg.Id;
 
-                // TODO: Pause UGV task and get vehicle status to be "paused"
+                EventHandler handler = ReceivePause;
+                handler?.Invoke(this, new EventArgs());
                 VehicleStatus = "paused";
                 Console.WriteLine("Paused task");
             }
@@ -294,7 +303,7 @@ namespace UGVComms
             SendAcknowledgement(Msg);
         }
 
-        private static void ProcessResumeMsg(bool NewMessage, ResumeMsg Msg)
+        private void ProcessResumeMsg(bool NewMessage, ResumeMsg Msg)
         {
             // GCS can send resume messages to this vehicle anytime (it sends pause messages to all vehicles
             // even those not related to mission)
@@ -305,7 +314,8 @@ namespace UGVComms
             {
                 LastReceivedMessageId[Msg.Sid] = Msg.Id;
 
-                // TODO: Resume UGV task and get vehicle status to be "running"
+                EventHandler handler = ReceiveResume;
+                handler?.Invoke(this, new EventArgs());
                 VehicleStatus = "running";
                 Console.WriteLine("Resumed task");
             }
@@ -314,7 +324,7 @@ namespace UGVComms
             SendAcknowledgement(Msg);
         }
 
-        private static void ProcessStopMsg(bool NewMessage, StopMsg Msg)
+        private void ProcessStopMsg(bool NewMessage, StopMsg Msg)
         {
             // GCS can send stop message even if vehicle is ready (usually its because other vehicles arent working right)
             if (VehicleStatus != "waiting" && VehicleStatus != "running" && VehicleStatus != "paused") return;
@@ -323,7 +333,8 @@ namespace UGVComms
             {
                 LastReceivedMessageId[Msg.Sid] = Msg.Id;
 
-                // TODO: Stop UGV mission and get vehicle status to be "ready"
+                EventHandler handler = ReceiveStop;
+                handler?.Invoke(this, new EventArgs());
                 VehicleStatus = "ready";
                 Console.WriteLine("Stopped mission");
             }
@@ -332,7 +343,7 @@ namespace UGVComms
             SendAcknowledgement(Msg);
         }
 
-        private static void ProcessAckMsg(bool NewMessage, AckMsg Msg)
+        private void ProcessAckMsg(bool NewMessage, AckMsg Msg)
         {
             if (!NewMessage) return;
             LastReceivedMessageId[Msg.Sid] = Msg.Id;
@@ -347,7 +358,7 @@ namespace UGVComms
             }
         }
 
-        private static void ProcessBadMsg(bool NewMessage, BadMsg Msg)
+        private void ProcessBadMsg(bool NewMessage, BadMsg Msg)
         {
             if (!NewMessage) return;
             LastReceivedMessageId[Msg.Sid] = Msg.Id;
@@ -355,7 +366,29 @@ namespace UGVComms
             Console.WriteLine("Bad message received {0}", Msg.Error);
         }
 
-        private static void SendAcknowledgement(Msg Msg)
+        public void SendUpdate(string MissionStatus, int lat, int lng, int heading)
+        {
+            switch (MissionStatus)
+            {
+                case "blah":
+                case "blah2":
+                    VehicleStatus = "ready";
+                    break;
+                case "error":
+                    VehicleStatus = "error";
+                    break;
+            }
+
+            SendMessage(0, new UpdateMsg()
+            {
+                Status = VehicleStatus,
+                Lat = lat,
+                Lng = lng,
+                Heading = heading,
+            });
+        }
+
+        private void SendAcknowledgement(Msg Msg)
         {
             SendMessage(Msg.Sid, new AckMsg()
             {
@@ -363,7 +396,7 @@ namespace UGVComms
             });
         }
 
-        private static void SendBadMessage(Msg Msg, string Error)
+        private void SendBadMessage(Msg Msg, string Error)
         {
             SendMessage(Msg.Sid, new BadMsg()
             {
@@ -371,12 +404,12 @@ namespace UGVComms
             });
         }
 
-        private static double Time()
+        private double Time()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + Offset;
         }
 
-        private static bool IsValidMessageSource(Msg Msg)
+        private bool IsValidMessageSource(Msg Msg)
         {
             return Msg.Sid == 0
                 || Msg.Sid == 100
